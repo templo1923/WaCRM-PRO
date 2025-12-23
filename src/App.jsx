@@ -438,7 +438,16 @@ function App() {
           )}
 
           {activeTab === "tutoriales" && (
-             <div className="w-full h-full absolute inset-0 p-8 pt-0 overflow-hidden"><iframe src={URL_TUTORIALES} className="w-full h-full rounded-3xl border border-gray-200 shadow-xl bg-white" title="Tutoriales" frameBorder="0"></iframe></div>
+             <div className="w-full h-full absolute inset-0 p-8 pt-0 overflow-hidden">
+  <iframe 
+    src={URL_TUTORIALES} 
+    className="w-full h-full rounded-3xl border border-gray-200 shadow-xl bg-white" 
+    title="Tutoriales" 
+    frameBorder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+    allowFullScreen
+  ></iframe>
+</div>
           )}
         </main>
       </div>
