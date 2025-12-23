@@ -450,7 +450,8 @@ function App() {
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen;"
       
       /* IMPORTANTE: Permitir que los scripts del iframe funcionen correctamente */
-      sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-presentation allow-top-navigation"
+      // Elimina completamente el atributo sandbox o usa:
+sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-presentation allow-top-navigation allow-downloads allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
       
       /* Propiedad para pantalla completa */
       allowFullScreen={true}
