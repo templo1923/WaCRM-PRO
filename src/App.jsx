@@ -438,19 +438,27 @@ function App() {
           )}
 
 {activeTab === "tutoriales" && (
-             /* 1. Quitamos 'p-8 pt-0' para dar espacio total al video */
-             <div className="w-full h-full absolute inset-0 overflow-hidden">
+             /* 1. Volvemos al diseño original (p-8) para que se vea bonito y no gigante */
+             <div className="w-full h-full absolute inset-0 p-8 pt-0 overflow-hidden">
                 <iframe 
                     src={URL_TUTORIALES} 
-                    /* 2. Ajustamos un poco el borde para que no se vea cortado */
-                    className="w-full h-full bg-white" 
+                    /* 2. Mantenemos el estilo de tarjeta redondeada */
+                    className="w-full h-full rounded-3xl border border-gray-200 shadow-xl bg-white" 
                     title="Tutoriales" 
                     frameBorder="0"
-                    /* 3. Mantenemos los permisos vitales para la barra de avance */
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowFullScreen
+                    scrolling="yes" /* Permite scroll por si los controles quedan muy abajo */
+                    
+                    /* 3. PERMISOS COMPLETOS: Agregamos 'fullscreen' y 'presentation' a la lista */
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen; presentation" 
+                    
+                    /* 4. Propiedad especial de React para pantalla completa */
+                    allowFullScreen={true}
+                    
+                    /* 5. Sandbox para máxima compatibilidad de scripts */
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation"
                 ></iframe>
              </div>
+          )}
           )}
         </main>
       </div>
