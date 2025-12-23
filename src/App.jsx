@@ -438,27 +438,28 @@ function App() {
           )}
 
 {activeTab === "tutoriales" && (
-             /* 1. Volvemos al diseño original (p-8) para que se vea bonito y no gigante */
-             <div className="w-full h-full absolute inset-0 p-8 pt-0 overflow-hidden">
-                <iframe 
-                    src={URL_TUTORIALES} 
-                    /* 2. Mantenemos el estilo de tarjeta redondeada */
-                    className="w-full h-full rounded-3xl border border-gray-200 shadow-xl bg-white" 
-                    title="Tutoriales" 
-                    frameBorder="0"
-                    scrolling="yes" /* Permite scroll por si los controles quedan muy abajo */
-                    
-                    /* 3. PERMISOS COMPLETOS: Agregamos 'fullscreen' y 'presentation' a la lista */
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen; presentation" 
-                    
-                    /* 4. Propiedad especial de React para pantalla completa */
-                    allowFullScreen={true}
-                    
-                    /* 5. Sandbox para máxima compatibilidad de scripts */
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation"
-                ></iframe>
-             </div>
-          )}
+  <div className="w-full h-full absolute inset-0 p-8 pt-0 overflow-hidden">
+    <iframe 
+      src={URL_TUTORIALES} 
+      className="w-full h-full rounded-3xl border border-gray-200 shadow-xl bg-white" 
+      title="Tutoriales" 
+      frameBorder="0"
+      scrolling="yes"
+      
+      /* PERMISOS MEJORADOS PARA REPRODUCTORES DE VIDEO */
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen;"
+      
+      /* IMPORTANTE: Permitir que los scripts del iframe funcionen correctamente */
+      sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-presentation allow-top-navigation"
+      
+      /* Propiedad para pantalla completa */
+      allowFullScreen={true}
+      
+      /* Añade esto para mejorar la compatibilidad con controles HTML5 */
+      referrerPolicy="no-referrer-when-downgrade"
+    ></iframe>
+  </div>
+)}
           )}
         </main>
       </div>
