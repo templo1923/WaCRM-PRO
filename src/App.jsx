@@ -22,7 +22,7 @@ const provider = new GoogleAuthProvider();
 
 // LINKS
 const WHATSAPP_SOPORTE = "https://wa.me/573004085041";
-const LINK_DESCARGA = "https://github.com/templo1923/loginwai/releases/download/v5.12.05/WAI.Agente.Setup.5.12.5.exe"; 
+const LINK_DESCARGA = "https://github.com/templo1923/WaCRM-PRO/releases/download/V3.3.0/WaCRM_PRO_Setup_v3.3.0.exe"; 
 const URL_TUTORIALES = "https://loginwaibot.vercel.app/tutoriales/";
 
 // --- ICONOS ---
