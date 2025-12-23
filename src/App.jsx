@@ -438,13 +438,15 @@ function App() {
           )}
 
 {activeTab === "tutoriales" && (
-             <div className="w-full h-full absolute inset-0 p-8 pt-0 overflow-hidden">
+             /* 1. Quitamos 'p-8 pt-0' para dar espacio total al video */
+             <div className="w-full h-full absolute inset-0 overflow-hidden">
                 <iframe 
                     src={URL_TUTORIALES} 
-                    className="w-full h-full rounded-3xl border border-gray-200 shadow-xl bg-white" 
+                    /* 2. Ajustamos un poco el borde para que no se vea cortado */
+                    className="w-full h-full bg-white" 
                     title="Tutoriales" 
                     frameBorder="0"
-                    /* ESTA ES LA CLAVE PARA DESBLOQUEAR VELOCIDAD Y AVANCE: */
+                    /* 3. Mantenemos los permisos vitales para la barra de avance */
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                     allowFullScreen
                 ></iframe>
