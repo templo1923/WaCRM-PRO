@@ -52,6 +52,8 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [diasRestantes, setDiasRestantes] = useState(0); 
   const [porcentajeDias, setPorcentajeDias] = useState(100); 
+  // ESTADO NUEVO: PAÍS DEL USUARIO
+  const [userCountry, setUserCountry] = useState('CO'); // Por defecto Colombia
 
   const [mensajeGlobal, setMensajeGlobal] = useState(""); 
   const [appVersion, setAppVersion] = useState("v1.0.0");
@@ -67,7 +69,19 @@ function App() {
   const [ventaMsg, setVentaMsg] = useState("");
   const [isReseller, setIsReseller] = useState(false); 
 
-  // 1. INICIO Y ESCUCHA DB
+  // --- 0. DETECTAR PAÍS (NUEVO) ---
+  useEffect(() => {
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        if(data && data.country_code) {
+           setUserCountry(data.country_code);
+        }
+      })
+      .catch(err => console.log("Error geoIP, usando default CO"));
+  }, []);
+
+  // --- 1. INICIO Y ESCUCHA DB ---
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -110,7 +124,7 @@ function App() {
     return () => unsubscribeAuth();
   }, []);
 
-  // 2. CARGAR PLANES
+  // --- 2. CARGAR PLANES ---
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -137,7 +151,7 @@ function App() {
     fetchConfig();
   }, []);
 
-  // 3. FECHAS
+  // --- 3. FECHAS ---
   useEffect(() => {
     if (licenseData?.fecha_vencimiento) {
       const hoy = new Date();
@@ -154,7 +168,7 @@ function App() {
     }
   }, [licenseData]);
 
-  // 4. TRANSACCIÓN
+  // --- 4. TRANSACCIÓN ---
   const handleProcesarVenta = async (e) => {
     e.preventDefault();
     setVentaMsg("Procesando...");
@@ -234,7 +248,6 @@ function App() {
     });
   };
 
-  // FUNCIÓN DESCARGA EMBED (Sin mostrar link en hover)
   const handleDownload = () => {
       window.open(LINK_DESCARGA, '_blank');
   };
@@ -295,7 +308,6 @@ function App() {
              <button onClick={handleLogout} className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-500 hover:text-red-700 rounded-xl hover:bg-red-50 transition-colors"><Icons.Logout /> <span className="ml-3">Cerrar Sesión</span></button>
           </div>
         </nav>
-        {/* BOTÓN DESCARGA MEJORADO (SIN LINK VISIBLE EN HOVER) */}
         <div className="p-4">
            <button onClick={handleDownload} className="flex items-center justify-center w-full px-4 py-3 mt-4 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
               <Icons.Windows /> <span className="ml-2">Descargar App PC</span>
@@ -420,7 +432,6 @@ function App() {
                </div>
                <div className="grid md:grid-cols-3 gap-8 text-left">
                   {getPlanesPorCategoria(planFilter).length > 0 ? getPlanesPorCategoria(planFilter).map((plan, i) => {
-                    // LÓGICA DE DESTACADO (ID contiene 'semestral', 'negocio', 'vip' o 'pro')
                     const esDestacado = plan.id.includes('semestral') || plan.id.includes('negocio') || plan.id.includes('vip') || plan.id.includes('pro');
                     
                     return (
@@ -431,8 +442,13 @@ function App() {
                          
                          <h3 className="text-sm font-bold uppercase tracking-widest mb-4 text-gray-500">{plan.nombre}</h3>
                          
-                         {/* AQUÍ ESTÁ EL ARREGLO DE DECIMALES: Math.round() */}
-                         <div className="flex items-baseline mb-6"><span className="text-4xl font-black text-gray-900 tracking-tight">{plan.precio_sugerido}</span><span className="text-gray-400 ml-2 font-medium text-sm">/ {plan.dias > 0 ? Math.round(plan.dias/30)+' meses' : 'pack'}</span></div>
+                         {/* LÓGICA DE PRECIO POR PAÍS */}
+                         <div className="flex items-baseline mb-6">
+                            <span className="text-4xl font-black text-gray-900 tracking-tight">
+                               {userCountry === 'CO' ? plan.precio_sugerido : (plan.precio_usd || plan.precio_sugerido)}
+                            </span>
+                            <span className="text-gray-400 ml-2 font-medium text-sm">/ {plan.dias > 0 ? Math.round(plan.dias/30)+' meses' : 'pack'}</span>
+                         </div>
                          
                          <div className="space-y-4 mb-8">
                             {plan.caracteristicas?.map((f, idx) => (<div key={idx} className="flex items-start"><Icons.Check color="text-green-500"/><span className="ml-3 text-sm text-gray-600 font-medium">{f}</span></div>))}
