@@ -40,7 +40,8 @@ const Icons = {
   User: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>,
   Key: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>,
   Crown: () => <svg className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"></path></svg>,
-  Copy: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+  Copy: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>,
+  Chip: () => <svg className="w-10 h-10 text-yellow-200 opacity-90" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2zm0 2v12h12V6H6zm2 2h2v2H8V8zm0 4h2v2H8v-2zm0 4h2v2H8v-2zm4-8h2v2h-2V8zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm4-8h2v2h-2V8zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"></path></svg>
 };
 
 function App() {
@@ -59,19 +60,17 @@ function App() {
   const [planesDB, setPlanesDB] = useState([]); 
   const [planFilter, setPlanFilter] = useState('personal'); 
   
-  // ESTADOS REVENDEDOR
   const [ventaTipo, setVentaTipo] = useState('personal'); 
   const [ventaEmail, setVentaEmail] = useState("");
   const [ventaOpcionID, setVentaOpcionID] = useState(""); 
   const [ventaMsg, setVentaMsg] = useState("");
   const [isReseller, setIsReseller] = useState(false); 
 
-  // --- 1. INICIO Y ESCUCHA DB ---
+  // 1. INICIO Y ESCUCHA DB
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        // LISTENER VIVO
         const docRef = doc(db, "licenciaWaCRM", currentUser.email);
         const unsubscribeSnapshot = onSnapshot(docRef, async (docSnap) => {
           if (docSnap.exists()) {
@@ -80,7 +79,6 @@ function App() {
             if (['revendedor', 'vip', 'admin'].includes(data.rol)) setIsReseller(true);
             else setIsReseller(false);
           } else {
-            // CREAR USUARIO NUEVO
             const fechaFin = new Date();
             fechaFin.setDate(fechaFin.getDate() + 2); 
             const fechaStr = fechaFin.toISOString().split('T')[0];
@@ -111,7 +109,7 @@ function App() {
     return () => unsubscribeAuth();
   }, []);
 
-  // --- 2. CARGAR PLANES (SOLO DATA REAL) ---
+  // 2. CARGAR PLANES
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -138,7 +136,7 @@ function App() {
     fetchConfig();
   }, []);
 
-  // --- 3. FECHAS Y ALERTAS ---
+  // 3. FECHAS
   useEffect(() => {
     if (licenseData?.fecha_vencimiento) {
       const hoy = new Date();
@@ -155,7 +153,7 @@ function App() {
     }
   }, [licenseData]);
 
-  // --- 4. LÓGICA DE TRANSACCIÓN CORREGIDA (AUTO-ACTIVACIÓN) ---
+  // 4. TRANSACCIÓN
   const handleProcesarVenta = async (e) => {
     e.preventDefault();
     setVentaMsg("Procesando...");
@@ -164,11 +162,10 @@ function App() {
     if (!ventaOpcionID) { setVentaMsg("❌ Selecciona un plan"); return; }
 
     const planSeleccionado = planesDB.find(p => p.id === ventaOpcionID);
-    if (!planSeleccionado) { setVentaMsg("❌ Error: Recarga la página (Plan no cargado)"); return; }
+    if (!planSeleccionado) { setVentaMsg("❌ Plan no encontrado (recarga la página)"); return; }
 
     try {
       await runTransaction(db, async (transaction) => {
-        // 1. LEER REVENDEDOR
         const resellerRef = doc(db, "licenciaWaCRM", user.email);
         const resellerDoc = await transaction.get(resellerRef);
         if (!resellerDoc.exists()) throw "Error cuenta";
@@ -178,7 +175,6 @@ function App() {
 
         if (saldoActual < costo) throw `❌ Saldo insuficiente (${saldoActual}). Costo: ${costo}.`;
 
-        // 2. LEER CLIENTE
         const clienteRef = doc(db, "licenciaWaCRM", ventaEmail);
         const clienteDoc = await transaction.get(clienteRef);
         
@@ -187,40 +183,33 @@ function App() {
             fecha_creacion_web: new Date().toISOString(), hwid: "", rol: "usuario", tipo_plan: "gratis", licencias_disponibles: 0
         };
 
-        // --- CORRECCIÓN CRÍTICA PARA AUTO-ACTIVACIÓN ---
-        // Si el cliente SOY YO MISMO, debo usar el saldo RESTADO, no el viejo.
         if (user.email === ventaEmail) {
             clienteData.licencias_disponibles = saldoActual - costo;
         }
 
-        // 3. APLICAR BENEFICIOS
         const creditosExtra = Number(planSeleccionado.creditosOtorgados || 0);
 
         if (creditosExtra > 0) {
-            // STOCK: Sumar a lo que tenga (o a lo que me quedó si soy yo)
             clienteData.licencias_disponibles = Number(clienteData.licencias_disponibles || 0) + creditosExtra;
-            // Rol
             if (planSeleccionado.categoria === 'vip') clienteData.rol = 'vip';
             else if (planSeleccionado.categoria === 'revendedor') clienteData.rol = 'revendedor';
             else if (clienteData.rol === 'usuario') clienteData.rol = 'revendedor';
             clienteData.tipo_plan = planSeleccionado.id;
         } else {
-            // TIEMPO
             const fechaBase = new Date();
             const diasSumar = Number(planSeleccionado.dias || 30);
             const fechaFin = new Date(fechaBase);
             fechaFin.setDate(fechaFin.getDate() + diasSumar);
+            const fechaFinStr = fechaFin.toISOString().split('T')[0];
+            
             clienteData.activa = true;
-            clienteData.fecha_vencimiento = fechaFin.toISOString().split('T')[0];
+            clienteData.fecha_vencimiento = fechaFinStr;
             clienteData.tipo_plan = planSeleccionado.id;
         }
         clienteData.updated_by = user.email;
 
-        // 4. GUARDAR
-        // Si soy yo mismo, SOLO hago update al clienteRef (porque ya contiene el saldo restado)
-        // Si es otro, actualizo a ambos por separado.
         if (user.email === ventaEmail) {
-             transaction.set(clienteRef, clienteData); // Una sola escritura maestra
+             transaction.set(clienteRef, clienteData);
         } else {
              transaction.update(resellerRef, { licencias_disponibles: saldoActual - costo });
              if (clienteDoc.exists()) transaction.update(clienteRef, clienteData);
@@ -250,26 +239,49 @@ function App() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-100 text-blue-900 font-bold">Cargando WaCRM PRO...</div>;
 
+  // --- NUEVA VISTA DE LOGIN SOLICITADA ---
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4 font-sans relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-gray-900 via-blue-900 to-black opacity-90"></div>
+        <div className="absolute -top-20 -right-20 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+
         {mensajeGlobal && <div className="absolute top-0 left-0 w-full bg-yellow-500 text-gray-900 text-center py-3 font-black text-sm shadow-lg z-50 tracking-wide">📢 {mensajeGlobal}</div>}
+        
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl w-full max-w-md p-10 text-center relative z-10">
           <div className="mb-6 inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg transform -rotate-3"><span className="text-4xl">🤖</span></div>
+          
           <h1 className="text-5xl font-black text-white mb-2 tracking-tighter">WaCRM<span className="text-blue-400">PRO</span></h1>
-          <p className="text-blue-200 text-lg font-medium mb-8">El Agente IA #1 para WhatsApp</p>
+          
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-2 px-6 rounded-full inline-block mb-4 shadow-lg animate-pulse uppercase tracking-wider text-sm">
+             ¡2 DÍAS GRATIS!
+          </div>
+
+          <p className="text-blue-100 text-xl font-medium mb-2">Regístrate y automatiza tu WhatsApp</p>
+          
+          <div className="flex items-center justify-center gap-2 text-green-400 font-bold text-sm mb-8">
+             <span className="text-lg">✓</span> Incluye todas las funciones premium
+          </div>
+
+          <p className="text-white text-sm font-bold mb-3 animate-bounce">👇 Acceso Rápido y Seguro</p>
+
           <button onClick={handleLogin} className="w-full bg-white hover:bg-gray-50 text-gray-900 font-bold py-4 px-6 rounded-xl flex items-center justify-center transition-all shadow-lg transform hover:-translate-y-1">
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6 mr-3" alt="G" /><span>Continuar con Google</span>
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6 mr-3" alt="G" />
+              <span>Iniciar sesión con Google</span>
           </button>
+          
+          <p className="mt-8 text-[10px] text-gray-400 font-medium uppercase tracking-wide flex items-center justify-center gap-2">
+             <span>🔒 Tus datos están protegidos</span> • <span>No requiere tarjeta de crédito</span>
+          </p>
         </div>
       </div>
     );
   }
 
+  // --- DASHBOARD ---
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
-      {/* SIDEBAR CON BOTÓN DESCARGA RESTAURADO */}
       <div className={`fixed inset-y-0 left-0 transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:relative md:translate-x-0 transition duration-200 ease-in-out z-30 w-72 bg-white border-r border-gray-100 flex flex-col shadow-xl md:shadow-none`}>
         <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-white">
           <h2 className="text-3xl font-black text-gray-800 tracking-tighter">WaCRM<span className="text-blue-600">PRO</span></h2>
@@ -325,7 +337,7 @@ function App() {
                      </div>
                   </div>
 
-                  {/* CREDENCIAL EXPLICADA */}
+                  {/* CREDENCIAL CORREGIDA */}
                   <div className="relative rounded-3xl p-6 shadow-xl text-white flex flex-col justify-between overflow-hidden group h-full bg-[#0F0F0F] border border-[#333]">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-black opacity-100"></div>
                       <div className="absolute -right-10 -top-10 w-40 h-40 bg-yellow-500/10 rounded-full blur-3xl"></div>
@@ -381,7 +393,7 @@ function App() {
                   <form onSubmit={handleProcesarVenta} className="space-y-6">
                      <div className="flex p-1 bg-gray-100 rounded-xl">
                         {['personal', 'revendedor', 'vip'].map(type => (
-                           <button key={type} type="button" onClick={() => { setVentaTipo(type); setVentaOpcionID(''); }} className={`flex-1 py-3 rounded-lg text-sm font-bold capitalize transition-all ${ventaTipo === type ? 'bg-white text-gray-900 shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>{type}</button>
+                           <button key={type} type="button" onClick={() => { setVentaTipo(type); setVentaOpcionID(''); }} className={`flex-1 py-3 rounded-lg text-sm font-bold capitalize transition-all ${ventaTipo === type ? 'bg-white text-gray-900 shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>{type === 'personal' ? 'Cliente Final' : type}</button>
                         ))}
                      </div>
                      <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Correo Cliente</label><input type="email" required placeholder="cliente@email.com" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition font-medium" value={ventaEmail} onChange={(e) => setVentaEmail(e.target.value)} /></div>
