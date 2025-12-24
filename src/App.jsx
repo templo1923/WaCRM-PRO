@@ -169,15 +169,27 @@ function App() {
   }, [licenseData]);
 
   // --- 4. TRANSACCIÓN ---
+// --- 4. TRANSACCIÓN (CORREGIDA Y BLINDADA) ---
   const handleProcesarVenta = async (e) => {
     e.preventDefault();
     setVentaMsg("Procesando...");
 
+    // 1. Validaciones básicas
     if (!ventaEmail.includes("@")) { setVentaMsg("❌ Email inválido"); return; }
     if (!ventaOpcionID) { setVentaMsg("❌ Selecciona un plan"); return; }
 
     const planSeleccionado = planesDB.find(p => p.id === ventaOpcionID);
     if (!planSeleccionado) { setVentaMsg("❌ Plan no encontrado (recarga la página)"); return; }
+
+    // --- BLOQUEO DE SEGURIDAD CRÍTICO (ANTI-BUCLE) ---
+    const creditosQueOtorga = Number(planSeleccionado.creditosOtorgados || 0);
+    
+    // Si el usuario se intenta vender a sí mismo Y el plan da créditos (stock) -> BLOQUEAR
+    if (user.email === ventaEmail && creditosQueOtorga > 0) {
+        setVentaMsg("⚠️ ERROR DE SEGURIDAD: No puedes recargarte 'Stock/Créditos' a ti mismo usando tu propio saldo. Debes contactar al administrador para comprar más cupo.");
+        return; 
+    }
+    // --------------------------------------------------
 
     try {
       await runTransaction(db, async (transaction) => {
@@ -198,20 +210,28 @@ function App() {
             fecha_creacion_web: new Date().toISOString(), hwid: "", rol: "usuario", tipo_plan: "gratis", licencias_disponibles: 0
         };
 
+        // Descontar saldo al revendedor (incluso si es él mismo comprando días)
+        let nuevoSaldoReseller = saldoActual - costo;
+
+        // Si se está vendiendo a sí mismo (solo permitido para días, ya pasamos el filtro de arriba)
         if (user.email === ventaEmail) {
-            clienteData.licencias_disponibles = saldoActual - costo;
+            clienteData.licencias_disponibles = nuevoSaldoReseller;
         }
 
-        const creditosExtra = Number(planSeleccionado.creditosOtorgados || 0);
-
-        if (creditosExtra > 0) {
-            clienteData.licencias_disponibles = Number(clienteData.licencias_disponibles || 0) + creditosExtra;
+        if (creditosQueOtorga > 0) {
+            // Lógica para venta de STOCK a TERCEROS
+            // Al cliente se le suman los créditos del plan
+            clienteData.licencias_disponibles = Number(clienteData.licencias_disponibles || 0) + creditosQueOtorga;
+            
             if (planSeleccionado.categoria === 'vip') clienteData.rol = 'vip';
             else if (planSeleccionado.categoria === 'revendedor') clienteData.rol = 'revendedor';
             else if (clienteData.rol === 'usuario') clienteData.rol = 'revendedor';
+            
             clienteData.tipo_plan = planSeleccionado.id;
         } else {
+            // Lógica para venta de DÍAS (Personal)
             const fechaBase = new Date();
+            // Si el cliente ya tiene fecha futura, sumar desde ahí (opcional, aquí lo dejamos desde hoy para simplificar o sumar)
             const diasSumar = Number(planSeleccionado.dias || 30);
             const fechaFin = new Date(fechaBase);
             fechaFin.setDate(fechaFin.getDate() + diasSumar);
@@ -223,24 +243,28 @@ function App() {
         }
         clienteData.updated_by = user.email;
 
+        // Escribir en la DB
         if (user.email === ventaEmail) {
+             // Si es auto-venta (solo días), actualizamos todo en el mismo doc
              transaction.set(clienteRef, clienteData);
         } else {
-             transaction.update(resellerRef, { licencias_disponibles: saldoActual - costo });
+             // Si es venta a tercero, descontamos al reseller y sumamos al cliente
+             transaction.update(resellerRef, { licencias_disponibles: nuevoSaldoReseller });
              if (clienteDoc.exists()) transaction.update(clienteRef, clienteData);
              else transaction.set(clienteRef, clienteData);
         }
       });
 
       setVentaMsg(`✅ ¡Activado con éxito!`);
-      setVentaEmail("");
+      setVentaEmail(""); // Limpiar campo
+      setVentaOpcionID(""); // Limpiar selección para evitar doble clic accidental
       
     } catch (error) {
       console.error(error);
       setVentaMsg(typeof error === 'string' ? error : "❌ Error de conexión.");
     }
   };
-
+  
   const getPlanesPorCategoria = (cat) => {
     return planesDB.filter(p => {
         const categoria = p.categoria || (p.id.includes('personal') ? 'personal' : p.id.includes('revendedor') || p.id.includes('r_') ? 'revendedor' : 'vip');
